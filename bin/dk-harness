@@ -1,0 +1,205 @@
+#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import argparse
+import json
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+
+IGNORE_NAMES = {
+    ".DS_Store",
+    ".agents",
+    ".claude",
+    ".git",
+    ".next",
+    ".turbo",
+    "__pycache__",
+    "build",
+    "dist",
+    "node_modules",
+    "target",
+}
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+REGISTRY_PATH = REPO_ROOT / "templates" / "registry.json"
+
+
+def load_registry() -> dict[str, dict[str, str]]:
+    data = json.loads(REGISTRY_PATH.read_text())
+    return {entry["name"]: entry for entry in data["templates"]}
+
+
+def ignore_filter(_: str, names: list[str]) -> set[str]:
+    return {name for name in names if name in IGNORE_NAMES}
+
+
+def ensure_destination(path: Path, force: bool) -> None:
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return
+
+    if not path.is_dir():
+        raise SystemExit(f"Destination exists and is not a directory: {path}")
+
+    if any(path.iterdir()):
+        if not force:
+            raise SystemExit(
+                f"Destination is not empty: {path}\n"
+                "Re-run with --force to replace it."
+            )
+        shutil.rmtree(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+
+def copy_template(template: dict[str, str], destination: Path, force: bool) -> None:
+    source = REPO_ROOT / template["path"]
+    if not source.exists():
+        raise SystemExit(f"Template path does not exist: {source}")
+
+    ensure_destination(destination, force)
+    shutil.copytree(source, destination, ignore=ignore_filter, dirs_exist_ok=True)
+
+
+def init_git_repo(destination: Path) -> None:
+    subprocess.run(
+        ["git", "init", "-b", "main"],
+        check=True,
+        cwd=destination,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def print_template_list(registry: dict[str, dict[str, str]]) -> None:
+    print("Available templates:")
+    for name in sorted(registry):
+        entry = registry[name]
+        print(f"- {name}: {entry['description']}")
+        print(f"  local: {entry['path']}")
+        print(f"  repo:  {entry['repo']}")
+
+
+def resolve_template(registry: dict[str, dict[str, str]], template_name: str) -> dict[str, str]:
+    try:
+        return registry[template_name]
+    except KeyError as exc:
+        known = ", ".join(sorted(registry))
+        raise SystemExit(
+            f"Unknown template: {template_name}\nKnown templates: {known}"
+        ) from exc
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="dk-harness",
+        description="Scaffold projects from the local harness template registry.",
+    )
+    subparsers = parser.add_subparsers(dest="command")
+
+    subparsers.add_parser("list", help="List available templates.")
+
+    new_parser = subparsers.add_parser("new", help="Create a new project from a template.")
+    new_parser.add_argument("template")
+    new_parser.add_argument("destination", nargs="?")
+    new_parser.add_argument("--force", action="store_true")
+    new_parser.add_argument("--init-git", action="store_true")
+
+    export_parser = subparsers.add_parser(
+        "export",
+        help="Copy a template to another directory, useful for syncing standalone template repos.",
+    )
+    export_parser.add_argument("template")
+    export_parser.add_argument("destination")
+    export_parser.add_argument("--force", action="store_true")
+
+    return parser
+
+
+def run_new(
+    registry: dict[str, dict[str, str]],
+    template_name: str,
+    destination: str | None,
+    *,
+    force: bool,
+    init_git: bool,
+) -> int:
+    template = resolve_template(registry, template_name)
+    target = Path(destination or template_name).resolve()
+    copy_template(template, target, force=force)
+
+    if init_git:
+        init_git_repo(target)
+
+    print(f"Created {target} from template '{template_name}'.")
+    if init_git:
+        print("Initialized a new git repository.")
+    return 0
+
+
+def run_export(
+    registry: dict[str, dict[str, str]],
+    template_name: str,
+    destination: str,
+    *,
+    force: bool,
+) -> int:
+    template = resolve_template(registry, template_name)
+    target = Path(destination).resolve()
+    copy_template(template, target, force=force)
+    print(f"Exported '{template_name}' to {target}.")
+    print(f"Configured standalone repo: {template['repo']}")
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    registry = load_registry()
+    parser = build_parser()
+
+    if len(argv) > 1 and argv[1] not in {"list", "new", "export", "-h", "--help"}:
+        shorthand_parser = argparse.ArgumentParser(add_help=False)
+        shorthand_parser.add_argument("template")
+        shorthand_parser.add_argument("destination", nargs="?")
+        shorthand_parser.add_argument("--force", action="store_true")
+        shorthand_parser.add_argument("--init-git", action="store_true")
+        shorthand_args = shorthand_parser.parse_args(argv[1:])
+        return run_new(
+            registry,
+            shorthand_args.template,
+            shorthand_args.destination,
+            force=shorthand_args.force,
+            init_git=shorthand_args.init_git,
+        )
+
+    args = parser.parse_args(argv[1:])
+
+    if args.command == "list":
+        print_template_list(registry)
+        return 0
+
+    if args.command == "new":
+        return run_new(
+            registry,
+            args.template,
+            args.destination,
+            force=args.force,
+            init_git=args.init_git,
+        )
+
+    if args.command == "export":
+        return run_export(
+            registry,
+            args.template,
+            args.destination,
+            force=args.force,
+        )
+
+    parser.print_help()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

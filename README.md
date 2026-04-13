@@ -169,3 +169,43 @@ The important thing is not just having tools, but making them block the kinds of
 - slow pages and poor Core Web Vitals
 - dependency vulnerabilities and leaked secrets
 - environment drift between local runs and CI
+
+## Templates
+
+This repo can also act as a local template catalog.
+
+- `templates/next-monorepo`
+- `templates/next-axum-monorepo`
+- `templates/next-fastapi-monorepo`
+
+The source of truth for template discovery lives in [templates/registry.json](/home/kimdongkudavid/develop/personal/harness/templates/registry.json).
+
+## CLI
+
+Use [bin/dk-harness](/home/kimdongkudavid/develop/personal/harness/bin/dk-harness) to scaffold from the local catalog:
+
+```bash
+./bin/dk-harness list
+./bin/dk-harness next-monorepo my-app
+./bin/dk-harness new next-axum-monorepo my-service --init-git
+```
+
+The CLI copies from the local `templates/` directory, so edits made here immediately affect future scaffolds from this repo.
+
+## Skills In Templates
+
+Skill-related project files follow the template if they are committed into the template directory.
+
+- Keep project-level files such as `skills-lock.json` if you want every generated project to inherit them.
+- Leave out machine-local folders such as `.agents/`, `.claude/`, `node_modules/`, and build output.
+
+## Standalone Template Repos
+
+If you also want each starter to live as its own GitHub repo, export from this repo and push from there:
+
+```bash
+./bin/dk-harness export next-monorepo ../dk-harness-next-monorepo --force
+./bin/dk-harness export next-axum-monorepo ../dk-harness-next-axum-monorepo --force
+```
+
+That keeps `harness` as the source of truth locally while giving you separate repos to publish as template repositories on GitHub.
