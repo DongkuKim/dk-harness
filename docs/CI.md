@@ -1,10 +1,11 @@
 # CI
 
-This repo now separates source-repo automation, template automation, and docs integrity checks.
+This repo now separates source-repo automation, template automation, docs integrity checks, and packaged scaffold verification.
 
 - `.github/workflows/repo-ci.yml`: validates the `dk-harness` source repo itself
-- `.github/workflows/templates-ci.yml`: validates the catalog per template
+- `.github/workflows/templates-ci.yml`: validates templates in place inside `templates/`
 - `.github/workflows/docs-ci.yml`: validates required docs, relative markdown links, and documented `just` commands
+- `.github/workflows/scaffold-eval.yml`: validates the packaged CLI by scaffolding each template and running the generated repo checks
 
 ## Source Repo Workflow
 
@@ -37,3 +38,5 @@ This repo now separates source-repo automation, template automation, and docs in
 - Template CI catches catalog drift. Repo CI catches source-repo release and supply-chain regressions.
 - Run `npm run docs:check` locally when changing docs, template commands, or registry metadata.
 - The docs workflow is meant to catch structure and drift, not to replace judgment about what the docs should say.
+- Keep the scaffold-evaluation workflow aligned with `scripts/release-pack-check.mjs`.
+- CI is meant to catch template drift, not to duplicate every release-time check.

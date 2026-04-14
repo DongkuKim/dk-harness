@@ -13,5 +13,6 @@
     "components/**/*.{ts,tsx}",
     "tests/**/*.{ts,tsx}"
   ],
+  "ignoreUnresolved": ["^\\./\\.next/dev/types/routes\\.d\\.ts$"],
   "ignoreDependencies": ["@workspace/ui", "@tailwindcss/postcss"]
 }

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -91,25 +91,28 @@ try {
     "Expected template list output from packaged CLI.",
   );
 
-  const targetDir = path.join(scaffoldDir, "app");
+  const registry = JSON.parse(readFileSync(path.join(repoRoot, "templates", "registry.json"), "utf8"));
+  for (const template of registry.templates) {
+    const targetDir = path.join(scaffoldDir, template.name);
 
-  console.log("Running installed package smoke test: scaffold");
-  run("npm", [
-    "exec",
-    "--yes",
-    "--package",
-    tarballPath,
-    "--",
-    "dk-harness",
-    "new",
-    "next-monorepo",
-    targetDir,
-  ]);
+    console.log(`Running installed package smoke test: scaffold ${template.name}`);
+    run("npm", [
+      "exec",
+      "--yes",
+      "--package",
+      tarballPath,
+      "--",
+      "dk-harness",
+      "new",
+      template.name,
+      targetDir,
+    ]);
 
-  assert(
-    existsSync(path.join(targetDir, ".github", "workflows", "ci.yml")),
-    "Expected scaffolded project to include .github/workflows/ci.yml.",
-  );
+    assert(
+      existsSync(path.join(targetDir, ".github", "workflows", "ci.yml")),
+      `Expected scaffolded ${template.name} project to include .github/workflows/ci.yml.`,
+    );
+  }
 
   console.log("release:check passed");
 } finally {
