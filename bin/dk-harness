@@ -28,10 +28,80 @@ IGNORE_NAMES = {
 REPO_ROOT = Path(__file__).resolve().parent.parent
 REGISTRY_PATH = REPO_ROOT / "templates" / "registry.json"
 
+ALLOWED_STACKS = {"nextjs", "axum", "fastapi"}
+ALLOWED_RUNTIMES = {"node", "python", "rust"}
+ALLOWED_LANES = {"web", "full-stack"}
 
-def load_registry() -> dict[str, dict[str, str]]:
+
+def validate_registry_entry(entry: dict[str, object]) -> None:
+    required_fields = {"name", "path", "repo", "description", "metadata"}
+    missing_fields = sorted(required_fields.difference(entry))
+    if missing_fields:
+        raise SystemExit(
+            "Invalid registry entry: "
+            f"missing fields {', '.join(missing_fields)}"
+        )
+
+    for field_name in ("name", "path", "repo", "description"):
+        value = entry[field_name]
+        if not isinstance(value, str) or not value:
+            raise SystemExit(
+                "Invalid registry entry for "
+                f"{entry['name']!r}: {field_name} must be a non-empty string"
+            )
+
+    metadata = entry["metadata"]
+    if not isinstance(metadata, dict):
+        raise SystemExit(
+            f"Invalid registry entry for {entry['name']!r}: metadata must be an object"
+        )
+
+    for field_name, allowed_values in (
+        ("stack", ALLOWED_STACKS),
+        ("runtime", ALLOWED_RUNTIMES),
+        ("lane", ALLOWED_LANES),
+    ):
+        values = metadata.get(field_name)
+        if not isinstance(values, list) or not values:
+            raise SystemExit(
+                "Invalid registry entry for "
+                f"{entry['name']!r}: metadata.{field_name} must be a non-empty list"
+            )
+
+        invalid_values = [
+            value for value in values if not isinstance(value, str) or value not in allowed_values
+        ]
+        if invalid_values:
+            allowed = ", ".join(sorted(allowed_values))
+            invalid_display = ", ".join(repr(value) for value in invalid_values)
+            raise SystemExit(
+                "Invalid registry entry for "
+                f"{entry['name']!r}: metadata.{field_name} contains unsupported values "
+                f"{invalid_display}; "
+                f"allowed values: {allowed}"
+            )
+
+
+def load_registry() -> dict[str, dict[str, object]]:
     data = json.loads(REGISTRY_PATH.read_text())
-    return {entry["name"]: entry for entry in data["templates"]}
+    templates = data.get("templates")
+    if not isinstance(templates, list):
+        raise SystemExit("Invalid registry: templates must be a list")
+
+    registry: dict[str, dict[str, object]] = {}
+    for entry in templates:
+        if not isinstance(entry, dict):
+            raise SystemExit("Invalid registry: each template must be an object")
+
+        validate_registry_entry(entry)
+        name = entry["name"]
+        if not isinstance(name, str) or not name:
+            raise SystemExit("Invalid registry entry: name must be a non-empty string")
+        if name in registry:
+            raise SystemExit(f"Invalid registry: duplicate template name {name!r}")
+        registry[name] = entry
+
+    return registry
 
 
 def ignore_filter(_: str, names: list[str]) -> set[str]:
@@ -56,8 +126,8 @@ def ensure_destination(path: Path, force: bool) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
 
 
-def copy_template(template: dict[str, str], destination: Path, force: bool) -> None:
-    source = REPO_ROOT / template["path"]
+def copy_template(template: dict[str, object], destination: Path, force: bool) -> None:
+    source = REPO_ROOT / str(template["path"])
     if not source.exists():
         raise SystemExit(f"Template path does not exist: {source}")
 
@@ -75,16 +145,24 @@ def init_git_repo(destination: Path) -> None:
     )
 
 
-def print_template_list(registry: dict[str, dict[str, str]]) -> None:
+def print_template_list(registry: dict[str, dict[str, object]]) -> None:
     print("Available templates:")
     for name in sorted(registry):
         entry = registry[name]
+        metadata = entry["metadata"]
+        assert isinstance(metadata, dict)
+        stack = ", ".join(metadata["stack"])
+        runtime = ", ".join(metadata["runtime"])
+        lane = ", ".join(metadata["lane"])
         print(f"- {name}: {entry['description']}")
-        print(f"  local: {entry['path']}")
-        print(f"  repo:  {entry['repo']}")
+        print(f"  stack:   {stack}")
+        print(f"  runtime: {runtime}")
+        print(f"  lane:    {lane}")
+        print(f"  local:   {entry['path']}")
+        print(f"  repo:    {entry['repo']}")
 
 
-def resolve_template(registry: dict[str, dict[str, str]], template_name: str) -> dict[str, str]:
+def resolve_template(registry: dict[str, dict[str, object]], template_name: str) -> dict[str, object]:
     try:
         return registry[template_name]
     except KeyError as exc:
@@ -121,7 +199,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def run_new(
-    registry: dict[str, dict[str, str]],
+    registry: dict[str, dict[str, object]],
     template_name: str,
     destination: str | None,
     *,
@@ -142,7 +220,7 @@ def run_new(
 
 
 def run_export(
-    registry: dict[str, dict[str, str]],
+    registry: dict[str, dict[str, object]],
     template_name: str,
     destination: str,
     *,
