@@ -1,6 +1,6 @@
 {
   "name": "dk-harness",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Scaffold Next.js, FastAPI, and Axum projects from the dk-harness template catalog.",
   "keywords": [
     "scaffold",
@@ -19,7 +19,7 @@
     "url": "git+https://github.com/DongkuKim/dk-harness.git"
   },
   "bin": {
-    "dk-harness": "./bin/dk-harness"
+    "dk-harness": "bin/dk-harness"
   },
   "scripts": {
     "repo:self-check": "node ./scripts/repo-self-check.mjs",
