@@ -1,14 +1,36 @@
 {
   "name": "dk-harness",
   "version": "0.1.0",
-  "description": "Scaffold projects from the local harness template catalog.",
+  "description": "Scaffold Next.js, FastAPI, and Axum projects from the dk-harness template catalog.",
+  "keywords": [
+    "scaffold",
+    "template",
+    "cli",
+    "nextjs",
+    "fastapi",
+    "axum"
+  ],
+  "homepage": "https://github.com/DongkuKim/dk-harness#readme",
+  "bugs": {
+    "url": "https://github.com/DongkuKim/dk-harness/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DongkuKim/dk-harness.git"
+  },
   "bin": {
     "dk-harness": "./bin/dk-harness"
+  },
+  "scripts": {
+    "release:check": "node ./scripts/release-pack-check.mjs"
   },
   "files": [
     "bin/dk-harness",
     "templates",
     "README.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "Apache-2.0"
 }

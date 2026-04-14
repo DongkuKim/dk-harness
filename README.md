@@ -200,8 +200,8 @@ You can also expose the same CLI through npm because the repo now defines a pack
 Local repo usage with npm:
 
 ```bash
-npm exec --package . dk-harness list
-npm exec --package . dk-harness next-monorepo my-app
+npm exec --package . -- dk-harness list
+npm exec --package . -- dk-harness next-monorepo my-app
 ```
 
 If you publish the package to npm, consumers can run it without cloning the repo:
@@ -212,6 +212,41 @@ npx dk-harness@latest next-monorepo my-app
 ```
 
 The current CLI is a Python entrypoint, so machines using the npm binary still need `python3` available.
+
+## npm Publishing
+
+The package should publish as `dk-harness`.
+
+- It keeps the npm package name aligned with the installed binary name.
+- It matches the intended `npm exec` and `npx` workflows from issue `#3`.
+- We can add a separate `create-dk-harness` package later if we want an opinionated `npm create` onboarding flow.
+
+Release prerequisites:
+
+- `python3` must be on `PATH` because the published binary is a Python script.
+- Node.js and npm must be available to run `npm exec`, `npx`, `npm pack`, and `npm publish`.
+
+Release gate:
+
+```bash
+npm run release:check
+```
+
+That command verifies all of the following against the packed tarball, not the working tree:
+
+- `bin/dk-harness`, `templates/`, `README.md`, and `LICENSE` are included
+- the packaged CLI can run `dk-harness list`
+- scaffolding from the packaged CLI copies `.github/workflows/ci.yml`
+
+Suggested publish flow:
+
+```bash
+npm version <patch|minor|major>
+npm run release:check
+npm publish
+npm exec --yes --package dk-harness -- dk-harness list
+npx dk-harness@latest list
+```
 
 ## Skills In Templates
 
