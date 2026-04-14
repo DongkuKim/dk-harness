@@ -1,7 +1,24 @@
 # Plans
 
-Use `docs/exec-plans/` for execution tracking.
+Plans are first-class artifacts in this template.
 
-- Put active implementation plans in `exec-plans/active/`
-- Move finished plans into `exec-plans/completed/`
-- Keep ongoing cleanup items in `exec-plans/tech-debt-tracker.md`
+## Planning Model
+
+- small, transient work may use a short local plan without a committed plan file
+- complex or multi-step work should create an execution plan in `docs/exec-plans/active/`
+- finished execution plans move to `docs/exec-plans/completed/`
+- known cleanup and follow-up items live in `docs/exec-plans/tech-debt-tracker.md`
+
+## Required Sections For Execution Plans
+
+Every execution plan in `active/` or `completed/` should include:
+
+- `## Status`
+- `## Scope`
+- `## Steps`
+- `## Progress Log`
+- `## Decision Log`
+
+## Operating Rule
+
+Execution plans, completed plans, and tech debt are all versioned and stored in the repository so agents can work without hidden external context.

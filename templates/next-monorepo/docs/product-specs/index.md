@@ -1,5 +1,5 @@
 # Product Specs Index
 
-- `new-user-onboarding.md`: first-run expectations for a freshly scaffolded app
+- [New User Onboarding](./new-user-onboarding.md)
 
-Add product-specific specs here when the starter grows beyond the baseline welcome flow.
+Add product-specific specs here when the starter grows beyond the baseline onboarding flow.

@@ -2,4 +2,4 @@
 
 This template does not ship with a database by default.
 
-If a database is added later, generate a snapshot here for agents and reviewers.
+If persistence is added later, generate and store a current schema snapshot here.
