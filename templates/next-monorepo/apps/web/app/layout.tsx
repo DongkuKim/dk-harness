@@ -2,7 +2,7 @@ import { Geist_Mono, Inter } from "next/font/google"
 
 import "@workspace/ui/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { cn } from "@workspace/ui/lib/utils"
+import { cn } from "@workspace/ui/runtime/utils"
 
 const inter = Inter({
   subsets: ["latin"],
