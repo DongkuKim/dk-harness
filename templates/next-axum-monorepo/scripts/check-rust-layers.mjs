@@ -32,9 +32,9 @@ function walk(dir) {
     }
 
     const source = stripComments(readFileSync(nextPath, "utf8"))
-    const matches = source.matchAll(/\bcrate::(api|core|domain)\b/g)
+    const matches = findReferencedLayers(source)
 
-    for (const [, targetLayer] of matches) {
+    for (const targetLayer of matches) {
       if (layerRank.get(targetLayer) < layerRank.get(ownerLayer)) {
         violations.push(
           `${relativePath}: ${ownerLayer} must not depend on higher layer ${targetLayer}`,
@@ -48,6 +48,90 @@ function stripComments(source) {
   return source
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/\/\/.*$/gm, "")
+}
+
+function findReferencedLayers(source) {
+  const referencedLayers = []
+
+  for (const match of source.matchAll(/\bcrate::(api|core|domain)\b/g)) {
+    referencedLayers.push(match[1])
+  }
+
+  for (const match of source.matchAll(/\bcrate::\{/g)) {
+    const groupContent = readBalancedGroup(source, match.index + "crate::".length)
+
+    if (!groupContent) {
+      continue
+    }
+
+    for (const entry of splitTopLevelItems(groupContent)) {
+      const layerMatch = entry.match(/^(api|core|domain)\b/)
+
+      if (layerMatch) {
+        referencedLayers.push(layerMatch[1])
+      }
+    }
+  }
+
+  return referencedLayers
+}
+
+function readBalancedGroup(source, openBraceIndex) {
+  if (source[openBraceIndex] !== "{") {
+    return null
+  }
+
+  let depth = 0
+
+  for (let index = openBraceIndex; index < source.length; index += 1) {
+    if (source[index] === "{") {
+      depth += 1
+    } else if (source[index] === "}") {
+      depth -= 1
+
+      if (depth === 0) {
+        return source.slice(openBraceIndex + 1, index)
+      }
+    }
+  }
+
+  return null
+}
+
+function splitTopLevelItems(groupContent) {
+  const items = []
+  let depth = 0
+  let start = 0
+
+  for (let index = 0; index < groupContent.length; index += 1) {
+    if (groupContent[index] === "{") {
+      depth += 1
+      continue
+    }
+
+    if (groupContent[index] === "}") {
+      depth -= 1
+      continue
+    }
+
+    if (groupContent[index] === "," && depth === 0) {
+      const item = groupContent.slice(start, index).trim()
+
+      if (item) {
+        items.push(item)
+      }
+
+      start = index + 1
+    }
+  }
+
+  const trailingItem = groupContent.slice(start).trim()
+
+  if (trailingItem) {
+    items.push(trailingItem)
+  }
+
+  return items
 }
 
 walk(srcDir)
