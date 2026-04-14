@@ -56,7 +56,10 @@ module.exports = {
   ],
   options: {
     doNotFollow: {
-      path: "node_modules",
+      path: "node_modules|\\.next",
+    },
+    exclude: {
+      path: "^(next-env\\.d\\.ts|\\.next)",
     },
     includeOnly: "^(app|components|hooks|lib)",
     tsConfig: {
