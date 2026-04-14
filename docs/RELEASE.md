@@ -21,6 +21,13 @@ The release flow is intentionally small and explicit.
 - Each job scaffolds a fresh repo from the packed tarball, then runs the generated repo's own `just lint`, `just typecheck`, and `just test` commands.
 - When scaffold evaluation fails, the logs point at the generated repo path rather than only at the source template tree.
 
+## Publish Workflow
+
+- `.github/workflows/npm-publish.yml` is a manual publish path for npm.
+- It requires the `NPM_TOKEN` repository secret.
+- The workflow always runs `npm run repo:self-check` before publishing.
+- Use the default dry-run mode first, then rerun with `dry_run: false` when you are ready to publish the tagged release.
+
 ## Release Expectations
 
 - Template edits should not break the package layout.

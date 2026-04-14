@@ -275,6 +275,12 @@ npm exec --yes --package dk-harness -- dk-harness list
 npx dk-harness@latest list
 ```
 
+Manual GitHub Actions publish path:
+
+- Configure the repository `NPM_TOKEN` secret.
+- Run `.github/workflows/npm-publish.yml` in dry-run mode first.
+- Re-run the same workflow with `dry_run: false` when the release tag is ready to publish.
+
 ## Skills In Templates
 
 Skill-related project files follow the template if they are committed into the template directory.
