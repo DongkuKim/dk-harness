@@ -48,6 +48,11 @@ BASE_PACKAGE_JSON = {
     "engines": {
         "node": ">=20",
     },
+    "pnpm": {
+        "overrides": {
+            "tmp": "0.2.4",
+        },
+    },
 }
 
 
@@ -1087,4 +1092,3 @@ def runnable_instances(instances: list[ModuleInstance]) -> list[ModuleInstance]:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2) + "\n")
-
