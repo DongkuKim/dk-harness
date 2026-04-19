@@ -9,9 +9,10 @@ const ROOT_REQUIRED_FILES = [
   "AGENTS.md",
   "ARCHITECTURE.md",
   "docs/README.md",
-  "docs/CI.md",
-  "docs/EXPECTATIONS.md",
-  "docs/RELEASE.md",
+  "docs/RELIABILITY.md",
+  "docs/PLANS.md",
+  "docs/QUALITY_SCORE.md",
+  "docs/SECURITY.md",
 ];
 
 const TEMPLATE_REQUIRED_FILES = [
@@ -76,7 +77,7 @@ function walkMarkdown(relativeDir) {
   for (const entry of entries) {
     const childRelativePath = path.posix.join(relativeDir, entry.name);
     if (entry.isDirectory()) {
-      if (childRelativePath.includes("/references")) {
+      if (childRelativePath.includes("/references") || entry.name === "node_modules") {
         continue;
       }
       files.push(...walkMarkdown(childRelativePath));

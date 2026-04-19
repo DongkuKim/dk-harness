@@ -17,6 +17,6 @@ This repository is a template catalog plus a small scaffold CLI. Start with:
 ## What Matters Most
 
 - Repo structure and ownership boundaries live in `ARCHITECTURE.md`.
-- Release packaging and npm publication flow live in `docs/RELEASE.md`.
-- CI and workflow coverage live in `docs/CI.md`.
-- Planning, reliability, and quality expectations live in `docs/EXPECTATIONS.md`.
+- Root repo commands, CI and workflow coverage, and release and scaffold verification live in `docs/RELIABILITY.md`.
+- Planning conventions and execution-plan storage live in `docs/PLANS.md`.
+- Quality expectations for docs, catalog changes, and automation live in `docs/QUALITY_SCORE.md`.
