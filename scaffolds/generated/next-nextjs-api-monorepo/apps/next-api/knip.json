@@ -1,0 +1,20 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "app/api/route.ts",
+    "app/api/health/route.ts",
+    "app/openapi.json/route.ts",
+    "app/swagger/page.tsx",
+    "app/swagger/swagger-ui.tsx",
+    "next.config.mjs",
+    "vitest.config.ts"
+  ],
+  "project": [
+    "app/**/*.{ts,tsx}",
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "types/**/*.d.ts"
+  ],
+  "ignoreUnresolved": ["^\\./\\.next/dev/types/routes\\.d\\.ts$"],
+  "ignoreDependencies": ["react", "react-dom"]
+}

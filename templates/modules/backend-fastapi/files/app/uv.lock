@@ -39,7 +39,7 @@ wheels = [
 ]
 
 [[package]]
-name = "api"
+name = "__APP_PACKAGE_NAME__"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

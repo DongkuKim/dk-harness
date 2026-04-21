@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -43,13 +43,19 @@ function assert(condition, message) {
   }
 }
 
+const requiredModuleTarEntries = readdirSync(path.join(repoRoot, "templates", "modules"), {
+  withFileTypes: true,
+})
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => `package/templates/modules/${entry.name}/module.json`)
+  .sort();
+
 const requiredTarEntries = [
   "package/bin/dk-harness",
   "package/bin/dk_harness_compose.py",
   "package/README.md",
   "package/LICENSE",
-  "package/templates/modules/core-monorepo/module.json",
-  "package/templates/modules/frontend-nextjs/module.json",
+  ...requiredModuleTarEntries,
 ];
 
 const tempRoot = mkdtempSync(path.join(os.tmpdir(), "dk-harness-release-"));

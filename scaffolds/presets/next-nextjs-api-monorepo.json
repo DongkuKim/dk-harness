@@ -1,0 +1,8 @@
+{
+  "name": "next-nextjs-api-monorepo",
+  "modules": [
+    "core-monorepo",
+    "frontend-nextjs",
+    "backend-nextjs:next-api"
+  ]
+}

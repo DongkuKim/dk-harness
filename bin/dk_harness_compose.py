@@ -109,6 +109,7 @@ def humanize_identifier(value: str) -> str:
         "api": "API",
         "axum": "Axum",
         "fastapi": "FastAPI",
+        "next": "Next",
         "nextjs": "Next.js",
         "web": "Web",
     }
@@ -326,6 +327,11 @@ def build_root_package_json(project_name: str, instances: list[ModuleInstance]) 
     dev_filters.extend(
         instance.app_id
         for instance in instances
+        if instance.definition.name == "backend-nextjs"
+    )
+    dev_filters.extend(
+        instance.app_id
+        for instance in instances
         if instance.definition.name == "backend-fastapi"
     )
 
@@ -366,6 +372,7 @@ def build_mise_toml(instances: list[ModuleInstance]) -> str:
 
 def build_justfile(instances: list[ModuleInstance]) -> str:
     has_frontend = any(instance.definition.name == "frontend-nextjs" for instance in instances)
+    nextjs_backend_instances = [instance for instance in instances if instance.definition.name == "backend-nextjs"]
     fastapi_instances = [instance for instance in instances if instance.definition.name == "backend-fastapi"]
     axum_instances = [instance for instance in instances if instance.definition.name == "backend-axum"]
 
@@ -398,6 +405,7 @@ def build_justfile(instances: list[ModuleInstance]) -> str:
                 "pnpm --dir packages/ui exec depcruise --config dependency-cruiser.cjs src",
             ]
         )
+    lint_lines.extend(f"pnpm --filter {instance.app_id} lint" for instance in nextjs_backend_instances)
     lint_lines.extend(f"pnpm --filter {instance.app_id} lint" for instance in fastapi_instances)
     if axum_instances:
         app_paths = " ".join(f"apps/{instance.app_id}" for instance in axum_instances)
@@ -415,6 +423,7 @@ def build_justfile(instances: list[ModuleInstance]) -> str:
     typecheck_lines = []
     if has_frontend:
         typecheck_lines.append("pnpm --filter web typecheck")
+    typecheck_lines.extend(f"pnpm --filter {instance.app_id} typecheck" for instance in nextjs_backend_instances)
     typecheck_lines.extend(f"pnpm --filter {instance.app_id} typecheck" for instance in fastapi_instances)
     typecheck_lines.extend(
         f"(cd apps/{instance.app_id} && cargo check --all-targets)" for instance in axum_instances
@@ -424,6 +433,7 @@ def build_justfile(instances: list[ModuleInstance]) -> str:
     test_lines = []
     if has_frontend:
         test_lines.append("pnpm --filter web test")
+    test_lines.extend(f"pnpm --filter {instance.app_id} test" for instance in nextjs_backend_instances)
     test_lines.extend(f"pnpm --filter {instance.app_id} test" for instance in fastapi_instances)
     test_lines.extend(
         f"(cd apps/{instance.app_id} && cargo nextest run)" for instance in axum_instances
@@ -658,6 +668,7 @@ def render_ci_job(
 
 def build_readme(instances: list[ModuleInstance]) -> str:
     has_frontend = any(instance.definition.name == "frontend-nextjs" for instance in instances)
+    nextjs_backend_instances = [instance for instance in instances if instance.definition.name == "backend-nextjs"]
     fastapi_instances = [instance for instance in instances if instance.definition.name == "backend-fastapi"]
     axum_instances = [instance for instance in instances if instance.definition.name == "backend-axum"]
     app_paths = [f"`apps/{instance.app_id}`" for instance in runnable_instances(instances)]
@@ -754,6 +765,29 @@ def build_readme(instances: list[ModuleInstance]) -> str:
                 ]
             )
 
+    if nextjs_backend_instances:
+        lines.extend(["", "## Running The Next.js API Backends", ""])
+        for instance in nextjs_backend_instances:
+            lines.extend(
+                [
+                    f"Start `apps/{instance.app_id}` from the monorepo root:",
+                    "",
+                    "```bash",
+                    f"pnpm --filter {instance.app_id} dev",
+                    "```",
+                    "",
+                    "Or run it directly from the app directory:",
+                    "",
+                    "```bash",
+                    f"cd apps/{instance.app_id}",
+                    "pnpm dev",
+                    "```",
+                    "",
+                    "Swagger UI is available at `/swagger`, and the raw OpenAPI document is served from `/openapi.json` on the app's configured port.",
+                    "",
+                ]
+            )
+
     if axum_instances:
         lines.extend(["", "## Running The Axum Backends", ""])
         for instance in axum_instances:
@@ -772,6 +806,7 @@ def build_readme(instances: list[ModuleInstance]) -> str:
 
 def readme_lane_summary(lane: str, instances: list[ModuleInstance]) -> str:
     has_frontend = any(instance.definition.name == "frontend-nextjs" for instance in instances)
+    nextjs_backend_instances = [instance for instance in instances if instance.definition.name == "backend-nextjs"]
     fastapi_instances = [instance for instance in instances if instance.definition.name == "backend-fastapi"]
     axum_instances = [instance for instance in instances if instance.definition.name == "backend-axum"]
 
@@ -779,6 +814,10 @@ def readme_lane_summary(lane: str, instances: list[ModuleInstance]) -> str:
     if lane == "lint":
         if has_frontend:
             parts.append("Biome, dependency-cruiser, and knip for `apps/web`; dependency-cruiser layer checks for `packages/ui`")
+        parts.extend(
+            f"Biome, dependency-cruiser, and knip for `apps/{instance.app_id}`"
+            for instance in nextjs_backend_instances
+        )
         if fastapi_instances:
             parts.extend(
                 f"Ruff, deptry, and import-linter for `apps/{instance.app_id}`"
@@ -793,6 +832,10 @@ def readme_lane_summary(lane: str, instances: list[ModuleInstance]) -> str:
         if has_frontend:
             parts.append("`tsc --noEmit` for `apps/web`")
         parts.extend(
+            f"`tsc --noEmit` for `apps/{instance.app_id}`"
+            for instance in nextjs_backend_instances
+        )
+        parts.extend(
             f"`basedpyright` for `apps/{instance.app_id}`"
             for instance in fastapi_instances
         )
@@ -803,6 +846,10 @@ def readme_lane_summary(lane: str, instances: list[ModuleInstance]) -> str:
     elif lane == "test":
         if has_frontend:
             parts.append("Vitest smoke coverage for `apps/web`")
+        parts.extend(
+            f"Vitest route coverage for `apps/{instance.app_id}`"
+            for instance in nextjs_backend_instances
+        )
         parts.extend(
             f"`pytest` coverage for `apps/{instance.app_id}`"
             for instance in fastapi_instances
@@ -832,6 +879,7 @@ def readme_lane_summary(lane: str, instances: list[ModuleInstance]) -> str:
 
 def build_architecture(instances: list[ModuleInstance]) -> str:
     has_frontend = any(instance.definition.name == "frontend-nextjs" for instance in instances)
+    nextjs_backend_instances = [instance for instance in instances if instance.definition.name == "backend-nextjs"]
     fastapi_instances = [instance for instance in instances if instance.definition.name == "backend-fastapi"]
     axum_instances = [instance for instance in instances if instance.definition.name == "backend-axum"]
 
@@ -847,6 +895,8 @@ def build_architecture(instances: list[ModuleInstance]) -> str:
 
     if has_frontend:
         lines.insert(4, "- `apps/web`: the main Next.js application")
+    for instance in nextjs_backend_instances:
+        lines.insert(4, f"- `apps/{instance.app_id}`: a Next.js API backend service")
     for instance in fastapi_instances:
         lines.insert(4, f"- `apps/{instance.app_id}`: a FastAPI backend service")
     for instance in axum_instances:
@@ -916,6 +966,23 @@ def build_architecture(instances: list[ModuleInstance]) -> str:
         )
         lines.extend(f"- applies to `apps/{instance.app_id}`" for instance in fastapi_instances)
 
+    if nextjs_backend_instances:
+        lines.extend(
+            [
+                "",
+                "## Next.js API Service Layers",
+                "",
+                "Each Next.js API service uses a directional backend split enforced by `dependency-cruiser`:",
+                "",
+                "- `app/api`",
+                "- `src/core`",
+                "- `src/domain`",
+                "",
+                "Lower layers must not import higher ones.",
+            ]
+        )
+        lines.extend(f"- applies to `apps/{instance.app_id}`" for instance in nextjs_backend_instances)
+
     if axum_instances:
         lines.extend(
             [
@@ -935,7 +1002,7 @@ def build_architecture(instances: list[ModuleInstance]) -> str:
             ]
         )
 
-    if not fastapi_instances and not axum_instances:
+    if not nextjs_backend_instances and not fastapi_instances and not axum_instances:
         lines.extend(
             [
                 "",
@@ -950,6 +1017,7 @@ def build_architecture(instances: list[ModuleInstance]) -> str:
 
 def build_reliability(instances: list[ModuleInstance]) -> str:
     has_frontend = any(instance.definition.name == "frontend-nextjs" for instance in instances)
+    nextjs_backend_instances = [instance for instance in instances if instance.definition.name == "backend-nextjs"]
     fastapi_instances = [instance for instance in instances if instance.definition.name == "backend-fastapi"]
     axum_instances = [instance for instance in instances if instance.definition.name == "backend-axum"]
 
@@ -983,6 +1051,18 @@ def build_reliability(instances: list[ModuleInstance]) -> str:
             ]
         )
         lines.extend(f"pnpm --filter {instance.app_id} dev" for instance in fastapi_instances)
+        lines.extend(["```"])
+
+    if nextjs_backend_instances:
+        lines.extend(
+            [
+                "",
+                "Run a Next.js API app directly when needed:",
+                "",
+                "```bash",
+            ]
+        )
+        lines.extend(f"pnpm --filter {instance.app_id} dev" for instance in nextjs_backend_instances)
         lines.extend(["```"])
 
     if axum_instances:
@@ -1066,12 +1146,17 @@ def build_agents() -> str:
 
 def scaffold_title(instances: list[ModuleInstance]) -> str:
     has_frontend = any(instance.definition.name == "frontend-nextjs" for instance in instances)
+    nextjs_backend_count = sum(1 for instance in instances if instance.definition.name == "backend-nextjs")
     fastapi_count = sum(1 for instance in instances if instance.definition.name == "backend-fastapi")
     axum_count = sum(1 for instance in instances if instance.definition.name == "backend-axum")
 
     parts = []
     if has_frontend:
         parts.append("Next.js")
+    if nextjs_backend_count == 1:
+        parts.append("Next.js API")
+    elif nextjs_backend_count > 1:
+        parts.append(f"{nextjs_backend_count}x Next.js API")
     if fastapi_count == 1:
         parts.append("FastAPI")
     elif fastapi_count > 1:

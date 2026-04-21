@@ -25,11 +25,13 @@ The source of truth for what users can scaffold is [`templates/modules/`](../../
 1. The user runs `dk-harness list` and sees the supported modules:
    - `core-monorepo`
    - `frontend-nextjs`
+   - `backend-nextjs`
    - `backend-fastapi`
    - `backend-axum`
 2. The user chooses a composition based on the stack they need:
    - web-only: `core-monorepo` + `frontend-nextjs`
-   - web + API: add `backend-fastapi:api`
+   - web + Next.js API: add `backend-nextjs:next-api`
+   - web + Python API: add `backend-fastapi:fast-api`
    - web + Rust service: add `backend-axum:realtime`
    - repeated services: add more repeatable runtime modules with unique ids
 3. The user scaffolds a repo with one command:
@@ -44,7 +46,7 @@ The source of truth for what users can scaffold is [`templates/modules/`](../../
 - Module selection is non-interactive. Users must pass repeated `--module` flags explicitly.
 - `core-monorepo` must appear exactly once.
 - `frontend-nextjs` is non-repeatable and always emits `apps/web`.
-- `backend-fastapi` and `backend-axum` are repeatable and require unique runtime ids across `apps/*`.
+- `backend-nextjs`, `backend-fastapi`, and `backend-axum` are repeatable and require unique runtime ids across `apps/*`.
 - Missing requirements and declared conflicts fail before the CLI writes any files.
 - The CLI refuses to write into a non-empty directory unless `--force` is provided.
 - Copying ignores generated and machine-local directories such as `.git`, `node_modules`, `.next`, `.venv`, `dist`, and `target`.
