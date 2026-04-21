@@ -208,6 +208,14 @@ This repo now acts as a module catalog plus a curated preset-fixture set.
 
 The public CLI exposes modules, not preset names. In v1, `core-monorepo` is required, `frontend-nextjs` is optional and fixed to `apps/web`, and backend runtimes are repeatable with explicit app ids.
 
+Supported modules:
+
+- `core-monorepo`
+- `frontend-nextjs`
+- `backend-nextjs`
+- `backend-fastapi`
+- `backend-axum`
+
 ## CLI
 
 Use [bin/dk-harness](bin/dk-harness) to compose scaffolds from the local module catalog:
@@ -220,7 +228,8 @@ Use [bin/dk-harness](bin/dk-harness) to compose scaffolds from the local module 
 ./bin/dk-harness new my-stack \
   --module core-monorepo \
   --module frontend-nextjs \
-  --module backend-fastapi:api \
+  --module backend-nextjs:next-api \
+  --module backend-fastapi:fast-api \
   --module backend-axum:realtime \
   --init-git
 ```
@@ -308,7 +317,8 @@ If you also want a composed scaffold to live as its own GitHub repo, export the 
 ./bin/dk-harness export ../dk-harness-mixed-runtime \
   --module core-monorepo \
   --module frontend-nextjs \
-  --module backend-fastapi:api \
+  --module backend-nextjs:next-api \
+  --module backend-fastapi:fast-api \
   --module backend-axum:realtime \
   --force
 ```

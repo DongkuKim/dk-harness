@@ -3,6 +3,6 @@
   "modules": [
     "core-monorepo",
     "frontend-nextjs",
-    "backend-fastapi:api"
+    "backend-fastapi:fast-api"
   ]
 }

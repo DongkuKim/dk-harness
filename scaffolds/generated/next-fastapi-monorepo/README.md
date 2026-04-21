@@ -1,6 +1,6 @@
 # Next.js + FastAPI Monorepo Scaffold
 
-This scaffold ships a README-aligned harness for `apps/web`, `apps/api`.
+This scaffold ships a README-aligned harness for `apps/web`, `apps/fast-api`.
 
 The scaffold root `mise.toml` is the source of truth for the local toolchain; run `mise install` before `just install` if you are not already inside a mise-managed shell.
 
@@ -22,16 +22,16 @@ just ci
 
 ## What Each Lane Covers
 
-- `just lint`: Biome, dependency-cruiser, and knip for `apps/web`; dependency-cruiser layer checks for `packages/ui`; Ruff, deptry, and import-linter for `apps/api`
-- `just typecheck`: `tsc --noEmit` for `apps/web`; `basedpyright` for `apps/api`
-- `just test`: Vitest smoke coverage for `apps/web`; `pytest` coverage for `apps/api`
+- `just lint`: Biome, dependency-cruiser, and knip for `apps/web`; dependency-cruiser layer checks for `packages/ui`; Ruff, deptry, and import-linter for `apps/fast-api`
+- `just typecheck`: `tsc --noEmit` for `apps/web`; `basedpyright` for `apps/fast-api`
+- `just test`: Vitest smoke coverage for `apps/web`; `pytest` coverage for `apps/fast-api`
 - `just ux`: Playwright, axe, and Lighthouse against the running Next.js app
-- `just supply-chain`: gitleaks, osv-scanner, and `pnpm audit`; `pip-audit` for `apps/api`
+- `just supply-chain`: gitleaks, osv-scanner, and `pnpm audit`; `pip-audit` for `apps/fast-api`
 
 ## Apps
 
 - `apps/web`: Next.js app
-- `apps/api`: FastAPI backend service
+- `apps/fast-api`: FastAPI backend service
 
 ## Adding Components
 
@@ -53,15 +53,15 @@ import { Button } from "@workspace/ui/ui/button"
 
 ## Running The FastAPI Backends
 
-Start `apps/api` from the monorepo root:
+Start `apps/fast-api` from the monorepo root:
 
 ```bash
-pnpm --filter api dev
+pnpm --filter fast-api dev
 ```
 
 Or run it directly from the Python app:
 
 ```bash
-cd apps/api
+cd apps/fast-api
 uv run fastapi dev app/main.py
 ```

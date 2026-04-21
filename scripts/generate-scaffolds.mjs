@@ -69,18 +69,8 @@ function assertPathExists(absolutePath, label) {
   }
 }
 
-function runBackendOnlySmoke(tempRoot) {
-  const smokePath = path.join(tempRoot, "backend-only-fastapi");
-  run("./bin/dk-harness", [
-    "new",
-    smokePath,
-    "--module",
-    "core-monorepo",
-    "--module",
-    "backend-fastapi:api",
-    "--force",
-  ]);
-  assertPathExists(path.join(smokePath, "apps", "api"), "backend-only FastAPI app");
+function assertBackendOnlyScaffold(smokePath, appId, label) {
+  assertPathExists(path.join(smokePath, "apps", appId), label);
 
   try {
     statSync(path.join(smokePath, "apps", "web"));
@@ -95,6 +85,32 @@ function runBackendOnlySmoke(tempRoot) {
   if (workflowContents.includes("\n  ux:\n")) {
     throw new Error("Backend-only smoke scaffold should not generate a UX CI job.");
   }
+}
+
+function runBackendOnlySmoke(tempRoot) {
+  const fastapiSmokePath = path.join(tempRoot, "backend-only-fastapi");
+  run("./bin/dk-harness", [
+    "new",
+    fastapiSmokePath,
+    "--module",
+    "core-monorepo",
+    "--module",
+    "backend-fastapi:fast-api",
+    "--force",
+  ]);
+  assertBackendOnlyScaffold(fastapiSmokePath, "fast-api", "backend-only FastAPI app");
+
+  const nextjsSmokePath = path.join(tempRoot, "backend-only-nextjs");
+  run("./bin/dk-harness", [
+    "new",
+    nextjsSmokePath,
+    "--module",
+    "core-monorepo",
+    "--module",
+    "backend-nextjs:next-api",
+    "--force",
+  ]);
+  assertBackendOnlyScaffold(nextjsSmokePath, "next-api", "backend-only Next.js API app");
 }
 
 function main() {

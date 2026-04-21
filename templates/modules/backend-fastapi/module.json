@@ -3,7 +3,7 @@
   "kind": "runtime",
   "runtime": "python",
   "repeatable": true,
-  "default_app_id": "api",
+  "default_app_id": "fast-api",
   "requires": [
     "core-monorepo"
   ],

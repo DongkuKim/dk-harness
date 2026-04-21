@@ -3,7 +3,7 @@
 ## Repository Shape
 
 - `apps/realtime`: an Axum backend service
-- `apps/api`: a FastAPI backend service
+- `apps/fast-api`: a FastAPI backend service
 - `apps/web`: the main Next.js application
 - `packages/ui`: the shared UI package used by runnable apps
 - `packages/eslint-config`: shared lint config
@@ -54,7 +54,7 @@ Each FastAPI app uses a directional split enforced by `import-linter`:
 - `app.domain`
 
 Lower layers must not import higher ones.
-- applies to `apps/api`
+- applies to `apps/fast-api`
 
 ## Rust Service Layers
 

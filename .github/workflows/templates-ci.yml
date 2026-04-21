@@ -44,6 +44,10 @@ jobs:
             path: scaffolds/generated/next-monorepo
             needs_python: false
             needs_rust: false
+          - name: next-nextjs-api-monorepo
+            path: scaffolds/generated/next-nextjs-api-monorepo
+            needs_python: false
+            needs_rust: false
           - name: next-fastapi-monorepo
             path: scaffolds/generated/next-fastapi-monorepo
             needs_python: true
@@ -99,6 +103,10 @@ jobs:
         fixture:
           - name: next-monorepo
             path: scaffolds/generated/next-monorepo
+            needs_python: false
+            needs_rust: false
+          - name: next-nextjs-api-monorepo
+            path: scaffolds/generated/next-nextjs-api-monorepo
             needs_python: false
             needs_rust: false
           - name: next-fastapi-monorepo
@@ -157,6 +165,10 @@ jobs:
             path: scaffolds/generated/next-monorepo
             needs_python: false
             needs_rust: false
+          - name: next-nextjs-api-monorepo
+            path: scaffolds/generated/next-nextjs-api-monorepo
+            needs_python: false
+            needs_rust: false
           - name: next-fastapi-monorepo
             path: scaffolds/generated/next-fastapi-monorepo
             needs_python: true
@@ -211,6 +223,10 @@ jobs:
         fixture:
           - name: next-monorepo
             path: scaffolds/generated/next-monorepo
+            needs_python: false
+            needs_rust: false
+          - name: next-nextjs-api-monorepo
+            path: scaffolds/generated/next-nextjs-api-monorepo
             needs_python: false
             needs_rust: false
           - name: next-fastapi-monorepo

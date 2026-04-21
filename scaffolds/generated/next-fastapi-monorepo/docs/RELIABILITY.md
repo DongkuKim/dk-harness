@@ -19,16 +19,16 @@ just ci
 Run a FastAPI app directly when needed:
 
 ```bash
-pnpm --filter api dev
+pnpm --filter fast-api dev
 ```
 
 ## Lane Responsibilities
 
-- `just lint`: Biome, dependency-cruiser, and knip for `apps/web`; dependency-cruiser layer checks for `packages/ui`; Ruff, deptry, and import-linter for `apps/api`
-- `just typecheck`: `tsc --noEmit` for `apps/web`; `basedpyright` for `apps/api`
-- `just test`: Vitest smoke coverage for `apps/web`; `pytest` coverage for `apps/api`
+- `just lint`: Biome, dependency-cruiser, and knip for `apps/web`; dependency-cruiser layer checks for `packages/ui`; Ruff, deptry, and import-linter for `apps/fast-api`
+- `just typecheck`: `tsc --noEmit` for `apps/web`; `basedpyright` for `apps/fast-api`
+- `just test`: Vitest smoke coverage for `apps/web`; `pytest` coverage for `apps/fast-api`
 - `just ux`: Playwright, axe, and Lighthouse against the running Next.js app
-- `just supply-chain`: gitleaks, osv-scanner, and `pnpm audit`; `pip-audit` for `apps/api`
+- `just supply-chain`: gitleaks, osv-scanner, and `pnpm audit`; `pip-audit` for `apps/fast-api`
 
 ## CI
 

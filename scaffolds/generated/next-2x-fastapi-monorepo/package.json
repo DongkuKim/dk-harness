@@ -9,7 +9,7 @@
     "ux": "just ux",
     "supply-chain": "just supply-chain",
     "ci": "just ci",
-    "dev": "turbo dev --filter=web --filter=api --filter=admin-api",
+    "dev": "turbo dev --filter=web --filter=fast-api --filter=admin-api",
     "format": "pnpm --filter web format"
   },
   "devDependencies": {

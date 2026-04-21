@@ -25,6 +25,7 @@
 
 - `core-monorepo`: required foundation module that owns the root workspace, shared packages, docs, and base harness wiring.
 - `frontend-nextjs`: optional Next.js app module that emits `apps/web`.
+- `backend-nextjs`: repeatable Next.js API runtime module that emits `apps/<id>`.
 - `backend-fastapi`: repeatable FastAPI runtime module that emits `apps/<id>`.
 - `backend-axum`: repeatable Axum runtime module that emits `apps/<id>`.
 

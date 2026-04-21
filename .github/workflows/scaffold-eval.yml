@@ -23,6 +23,9 @@ jobs:
           - name: next-monorepo
             needs_python: false
             needs_rust: false
+          - name: next-nextjs-api-monorepo
+            needs_python: false
+            needs_rust: false
           - name: next-fastapi-monorepo
             needs_python: true
             needs_rust: false
