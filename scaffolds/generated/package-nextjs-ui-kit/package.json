@@ -39,7 +39,8 @@
   },
   "pnpm": {
     "overrides": {
-      "tmp": "0.2.4"
+      "tmp": "0.2.4",
+      "uuid": "14.0.0"
     }
   },
   "name": "package-nextjs-ui-kit"

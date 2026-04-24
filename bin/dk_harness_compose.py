@@ -51,6 +51,7 @@ BASE_PACKAGE_JSON = {
     "pnpm": {
         "overrides": {
             "tmp": "0.2.4",
+            "uuid": "14.0.0",
         },
     },
 }
