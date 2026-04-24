@@ -44,6 +44,10 @@ jobs:
             path: scaffolds/generated/next-monorepo
             needs_python: false
             needs_rust: false
+          - name: package-nextjs-ui-kit
+            path: scaffolds/generated/package-nextjs-ui-kit
+            needs_python: false
+            needs_rust: false
           - name: next-nextjs-api-monorepo
             path: scaffolds/generated/next-nextjs-api-monorepo
             needs_python: false
@@ -103,6 +107,10 @@ jobs:
         fixture:
           - name: next-monorepo
             path: scaffolds/generated/next-monorepo
+            needs_python: false
+            needs_rust: false
+          - name: package-nextjs-ui-kit
+            path: scaffolds/generated/package-nextjs-ui-kit
             needs_python: false
             needs_rust: false
           - name: next-nextjs-api-monorepo
@@ -165,6 +173,10 @@ jobs:
             path: scaffolds/generated/next-monorepo
             needs_python: false
             needs_rust: false
+          - name: package-nextjs-ui-kit
+            path: scaffolds/generated/package-nextjs-ui-kit
+            needs_python: false
+            needs_rust: false
           - name: next-nextjs-api-monorepo
             path: scaffolds/generated/next-nextjs-api-monorepo
             needs_python: false
@@ -223,6 +235,10 @@ jobs:
         fixture:
           - name: next-monorepo
             path: scaffolds/generated/next-monorepo
+            needs_python: false
+            needs_rust: false
+          - name: package-nextjs-ui-kit
+            path: scaffolds/generated/package-nextjs-ui-kit
             needs_python: false
             needs_rust: false
           - name: next-nextjs-api-monorepo

@@ -1,0 +1,7 @@
+{
+  "name": "package-nextjs-ui-kit",
+  "modules": [
+    "core-monorepo",
+    "package-nextjs:ui-kit"
+  ]
+}

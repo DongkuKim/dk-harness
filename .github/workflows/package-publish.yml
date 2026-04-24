@@ -1,10 +1,10 @@
-name: npm Publish
+name: Package Publish
 
 on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Run npm publish in dry-run mode"
+        description: "Run pnpm publish in dry-run mode"
         required: true
         default: true
         type: boolean
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   publish:
-    name: npm publish
+    name: pnpm publish
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -24,18 +24,21 @@ jobs:
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Verify release package
-        run: npm run repo:self-check
+        run: pnpm run repo:self-check
       - name: Publish dry run
         if: inputs.dry_run
-        run: npm publish --dry-run
+        run: pnpm publish --dry-run
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Publish to npm
+      - name: Publish package
         if: ${{ !inputs.dry_run }}
-        run: npm publish --provenance --access public
+        run: pnpm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

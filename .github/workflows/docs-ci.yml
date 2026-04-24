@@ -18,4 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm run docs:check
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+      - run: pnpm run docs:check

@@ -173,7 +173,7 @@ Do not run everything in one giant job. Split the harness by speed and purpose.
 For this source repo specifically, the lane split is:
 
 - `self-check`: CLI compilation plus release tarball verification
-- `supply-chain`: gitleaks, osv-scanner, and root `npm audit`
+- `supply-chain`: gitleaks, osv-scanner, and root `pnpm audit`
 
 ## Minimal Opinionated Starter Set
 
@@ -206,12 +206,13 @@ This repo now acts as a module catalog plus a curated preset-fixture set.
 - [`scaffolds/presets/`](scaffolds/presets): internal preset manifests used for CI and release verification
 - [`scaffolds/generated/`](scaffolds/generated): committed outputs generated from those preset manifests
 
-The public CLI exposes modules, not preset names. In v1, `core-monorepo` is required, `frontend-nextjs` is optional and fixed to `apps/web`, and backend runtimes are repeatable with explicit app ids.
+The public CLI exposes modules, not preset names. In v1, `core-monorepo` is required, `frontend-nextjs` is optional and fixed to `apps/web`, and package/backend modules are repeatable with explicit ids.
 
 Supported modules:
 
 - `core-monorepo`
 - `frontend-nextjs`
+- `package-nextjs`
 - `backend-nextjs`
 - `backend-fastapi`
 - `backend-axum`
@@ -225,6 +226,9 @@ Use [bin/dk-harness](bin/dk-harness) to compose scaffolds from the local module 
 ./bin/dk-harness new my-app \
   --module core-monorepo \
   --module frontend-nextjs
+./bin/dk-harness new my-ui-kit \
+  --module core-monorepo \
+  --module package-nextjs:ui-kit
 ./bin/dk-harness new my-stack \
   --module core-monorepo \
   --module frontend-nextjs \
@@ -236,43 +240,37 @@ Use [bin/dk-harness](bin/dk-harness) to compose scaffolds from the local module 
 
 The CLI composes directly from `templates/modules/`, so edits made there immediately affect future scaffolds from this repo.
 
-You can also expose the same CLI through npm because the repo now defines a package binary in [package.json](package.json).
+You can also expose the same CLI through pnpm because the repo defines a package binary in [package.json](package.json).
 
-Local repo usage with npm:
-
-```bash
-npm exec --package . -- dk-harness list
-npm exec --package . -- dk-harness new my-app --module core-monorepo --module frontend-nextjs
-```
-
-If you publish the package to npm, consumers can run it without cloning the repo:
+Published package usage with pnpm:
 
 ```bash
-npx dk-harness@latest list
-npx dk-harness@latest new my-app --module core-monorepo --module frontend-nextjs
+pnpm dlx --package=dk-harness@latest dk-harness list
+pnpm dlx --package=dk-harness@latest dk-harness new my-app --module core-monorepo --module frontend-nextjs
+pnpm dlx --package=dk-harness@latest dk-harness new my-ui-kit --module core-monorepo --module package-nextjs:ui-kit
 ```
 
-The current CLI is a Python entrypoint, so machines using the npm binary still need `python3` available.
+The current CLI is a Python entrypoint, so machines using the package binary still need `python3` available.
 
-## npm Publishing
+## Package Publishing
 
 The package should publish as `dk-harness`.
 
-- It keeps the npm package name aligned with the installed binary name.
-- It matches the intended `npm exec` and `npx` workflows from issue `#3`.
-- We can add a separate `create-dk-harness` package later if we want an opinionated `npm create` onboarding flow.
+- It keeps the package name aligned with the installed binary name.
+- It matches the intended `pnpm dlx` workflow.
+- We can add a separate `create-dk-harness` package later if we want an opinionated create-package onboarding flow.
 
 Release prerequisites:
 
 - Run `mise install` first if you want the committed toolchain versions instead of relying on system binaries.
 - `python3` must be on `PATH` if you are not using `mise`, because the published binary is a Python script.
-- Node.js and npm must be available to run `npm exec`, `npx`, `npm pack`, and `npm publish`.
+- Node.js and pnpm must be available to run `pnpm dlx`, `pnpm pack`, and `pnpm publish`.
 - gitleaks and osv-scanner must be available if you want to run `just supply-chain` locally.
 
 Release gate:
 
 ```bash
-npm run release:check
+pnpm run release:check
 ```
 
 That command verifies all of the following against the packed tarball, not the working tree:
@@ -285,17 +283,16 @@ That command verifies all of the following against the packed tarball, not the w
 Suggested publish flow:
 
 ```bash
-npm version <patch|minor|major>
-npm run release:check
-npm publish
-npm exec --yes --package dk-harness -- dk-harness list
-npx dk-harness@latest list
+pnpm version <patch|minor|major>
+pnpm run release:check
+pnpm publish
+pnpm dlx --package=dk-harness@latest dk-harness list
 ```
 
 Manual GitHub Actions publish path:
 
 - Configure the repository `NPM_TOKEN` secret.
-- Run `.github/workflows/npm-publish.yml` in dry-run mode first.
+- Run `.github/workflows/package-publish.yml` in dry-run mode first.
 - Re-run the same workflow with `dry_run: false` when the release tag is ready to publish.
 
 ## Skills In Generated Scaffolds
@@ -313,6 +310,10 @@ If you also want a composed scaffold to live as its own GitHub repo, export the 
 ./bin/dk-harness export ../dk-harness-next-monorepo \
   --module core-monorepo \
   --module frontend-nextjs \
+  --force
+./bin/dk-harness export ../dk-harness-ui-kit \
+  --module core-monorepo \
+  --module package-nextjs:ui-kit \
   --force
 ./bin/dk-harness export ../dk-harness-mixed-runtime \
   --module core-monorepo \

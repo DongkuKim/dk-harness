@@ -24,15 +24,15 @@ console.log("Compiling the published Python CLI...");
 run("python3", ["-m", "py_compile", "bin/dk-harness"]);
 
 console.log("Validating module manifests...");
-run("npm", ["run", "modules:check"]);
+run("pnpm", ["run", "modules:check"]);
 
 console.log("Checking generated scaffold freshness...");
-run("npm", ["run", "fixtures:check"]);
+run("pnpm", ["run", "fixtures:check"]);
 
 console.log("Checking the local CLI command surface...");
 run("./bin/dk-harness", ["list"]);
 
 console.log("Running release packaging verification...");
-run("npm", ["run", "release:check"]);
+run("pnpm", ["run", "release:check"]);
 
 console.log("repo:self-check passed");

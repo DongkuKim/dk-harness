@@ -51,6 +51,7 @@ BASE_PACKAGE_JSON = {
     "pnpm": {
         "overrides": {
             "tmp": "0.2.4",
+            "uuid": "14.0.0",
         },
     },
 }
@@ -341,10 +342,17 @@ def build_root_package_json(project_name: str, instances: list[ModuleInstance]) 
     else:
         package_json["scripts"]["dev"] = "echo \"No turbo-managed dev tasks are configured for this scaffold.\""
 
+    format_filters = []
     if any(instance.definition.name == "frontend-nextjs" for instance in instances):
-        package_json["scripts"]["format"] = "pnpm --filter web format"
+        format_filters.append("web")
+    format_filters.extend(package_filter(instance) for instance in package_nextjs_instances(instances))
+
+    if format_filters:
+        package_json["scripts"]["format"] = " && ".join(
+            f"pnpm --filter {filter_name} format" for filter_name in format_filters
+        )
     else:
-        package_json["scripts"]["format"] = "echo \"No frontend module selected; nothing to format.\""
+        package_json["scripts"]["format"] = "echo \"No formattable frontend or package module selected.\""
 
     return package_json
 
@@ -375,6 +383,7 @@ def build_justfile(instances: list[ModuleInstance]) -> str:
     nextjs_backend_instances = [instance for instance in instances if instance.definition.name == "backend-nextjs"]
     fastapi_instances = [instance for instance in instances if instance.definition.name == "backend-fastapi"]
     axum_instances = [instance for instance in instances if instance.definition.name == "backend-axum"]
+    package_instances = package_nextjs_instances(instances)
 
     sections = ['set shell := ["bash", "-cu"]', ""]
 
@@ -407,6 +416,7 @@ def build_justfile(instances: list[ModuleInstance]) -> str:
         )
     lint_lines.extend(f"pnpm --filter {instance.app_id} lint" for instance in nextjs_backend_instances)
     lint_lines.extend(f"pnpm --filter {instance.app_id} lint" for instance in fastapi_instances)
+    lint_lines.extend(f"pnpm --filter {package_filter(instance)} lint" for instance in package_instances)
     if axum_instances:
         app_paths = " ".join(f"apps/{instance.app_id}" for instance in axum_instances)
         lint_lines.append(f"node ./scripts/check-rust-layers.mjs {app_paths}")
@@ -426,6 +436,9 @@ def build_justfile(instances: list[ModuleInstance]) -> str:
     typecheck_lines.extend(f"pnpm --filter {instance.app_id} typecheck" for instance in nextjs_backend_instances)
     typecheck_lines.extend(f"pnpm --filter {instance.app_id} typecheck" for instance in fastapi_instances)
     typecheck_lines.extend(
+        f"pnpm --filter {package_filter(instance)} typecheck" for instance in package_instances
+    )
+    typecheck_lines.extend(
         f"(cd apps/{instance.app_id} && cargo check --all-targets)" for instance in axum_instances
     )
     sections.extend(render_just_target("typecheck", typecheck_lines))
@@ -435,6 +448,7 @@ def build_justfile(instances: list[ModuleInstance]) -> str:
         test_lines.append("pnpm --filter web test")
     test_lines.extend(f"pnpm --filter {instance.app_id} test" for instance in nextjs_backend_instances)
     test_lines.extend(f"pnpm --filter {instance.app_id} test" for instance in fastapi_instances)
+    test_lines.extend(f"pnpm --filter {package_filter(instance)} test" for instance in package_instances)
     test_lines.extend(
         f"(cd apps/{instance.app_id} && cargo nextest run)" for instance in axum_instances
     )
@@ -493,7 +507,7 @@ def build_turbo_json() -> dict[str, Any]:
             "build": {
                 "dependsOn": ["^build"],
                 "inputs": ["$TURBO_DEFAULT$", ".env*"],
-                "outputs": [".next/**", "!.next/cache/**"],
+                "outputs": [".next/**", "!.next/cache/**", "dist/**"],
             },
             "lint": {
                 "dependsOn": ["^lint"],
@@ -671,13 +685,23 @@ def build_readme(instances: list[ModuleInstance]) -> str:
     nextjs_backend_instances = [instance for instance in instances if instance.definition.name == "backend-nextjs"]
     fastapi_instances = [instance for instance in instances if instance.definition.name == "backend-fastapi"]
     axum_instances = [instance for instance in instances if instance.definition.name == "backend-axum"]
+    package_instances = package_nextjs_instances(instances)
     app_paths = [f"`apps/{instance.app_id}`" for instance in runnable_instances(instances)]
+    package_paths = [f"`packages/{instance.app_id}`" for instance in package_instances]
 
     lines = [f"# {scaffold_title(instances)}", ""]
 
-    if app_paths:
+    if app_paths and package_paths:
+        lines.append(
+            f"This scaffold ships a README-aligned harness for {', '.join(app_paths)} and {', '.join(package_paths)}."
+        )
+    elif app_paths:
         lines.append(
             f"This scaffold ships a README-aligned harness for {', '.join(app_paths)}."
+        )
+    elif package_paths:
+        lines.append(
+            f"This scaffold ships a README-aligned harness for publishable packages at {', '.join(package_paths)}."
         )
     else:
         lines.append("This scaffold ships a README-aligned harness for the shared workspace packages.")
@@ -703,8 +727,24 @@ def build_readme(instances: list[ModuleInstance]) -> str:
             "just ci",
             "```",
             "",
-            "`packages/ui` is still generated and updated through `shadcn` commands, but its internal layer boundaries are checked as part of the harness.",
-            "",
+        ]
+    )
+    if has_frontend:
+        lines.extend(
+            [
+                "`packages/ui` is still generated and updated through `shadcn` commands, but its internal layer boundaries are checked as part of the harness.",
+                "",
+            ]
+        )
+    elif package_instances:
+        lines.extend(
+            [
+                "Publishable package modules include their own `components.json` and package-level `shadcn` workflow.",
+                "",
+            ]
+        )
+    lines.extend(
+        [
             "## What Each Lane Covers",
             "",
             f"- `just lint`: {readme_lane_summary('lint', instances)}",
@@ -719,6 +759,11 @@ def build_readme(instances: list[ModuleInstance]) -> str:
         lines.extend(["", "## Apps", ""])
         for instance in runnable_instances(instances):
             lines.append(f"- `apps/{instance.app_id}`: {instance.definition.documentation['app_summary']}")
+
+    if package_instances:
+        lines.extend(["", "## Packages", ""])
+        for instance in package_instances:
+            lines.append(f"- `packages/{instance.app_id}`: {instance.definition.documentation['app_summary']}")
 
     if has_frontend:
         lines.extend(
@@ -740,6 +785,47 @@ def build_readme(instances: list[ModuleInstance]) -> str:
                 "",
                 "```tsx",
                 'import { Button } from "@workspace/ui/ui/button"',
+                "```",
+            ]
+        )
+
+    if package_instances:
+        lines.extend(
+            [
+                "",
+                "## UI Kit Package Workflow",
+                "",
+                "Add UI kit primitives with:",
+                "",
+                "```bash",
+            ]
+        )
+        for instance in package_instances:
+            lines.append(f"pnpm dlx shadcn@latest add button -c packages/{instance.app_id}")
+        lines.extend(
+            [
+                "```",
+                "",
+                "Build a package before publishing:",
+                "",
+                "```bash",
+            ]
+        )
+        for instance in package_instances:
+            lines.append(f"pnpm --filter {package_filter(instance)} build")
+        lines.extend(
+            [
+                "```",
+                "",
+                "Review components in Storybook:",
+                "",
+                "```bash",
+            ]
+        )
+        for instance in package_instances:
+            lines.append(f"pnpm --filter {package_filter(instance)} storybook")
+        lines.extend(
+            [
                 "```",
             ]
         )
@@ -809,6 +895,7 @@ def readme_lane_summary(lane: str, instances: list[ModuleInstance]) -> str:
     nextjs_backend_instances = [instance for instance in instances if instance.definition.name == "backend-nextjs"]
     fastapi_instances = [instance for instance in instances if instance.definition.name == "backend-fastapi"]
     axum_instances = [instance for instance in instances if instance.definition.name == "backend-axum"]
+    package_instances = package_nextjs_instances(instances)
 
     parts: list[str] = []
     if lane == "lint":
@@ -817,6 +904,10 @@ def readme_lane_summary(lane: str, instances: list[ModuleInstance]) -> str:
         parts.extend(
             f"Biome, dependency-cruiser, and knip for `apps/{instance.app_id}`"
             for instance in nextjs_backend_instances
+        )
+        parts.extend(
+            f"Biome, dependency-cruiser, and knip for `packages/{instance.app_id}`"
+            for instance in package_instances
         )
         if fastapi_instances:
             parts.extend(
@@ -836,6 +927,10 @@ def readme_lane_summary(lane: str, instances: list[ModuleInstance]) -> str:
             for instance in nextjs_backend_instances
         )
         parts.extend(
+            f"`tsc --noEmit` for `packages/{instance.app_id}`"
+            for instance in package_instances
+        )
+        parts.extend(
             f"`basedpyright` for `apps/{instance.app_id}`"
             for instance in fastapi_instances
         )
@@ -849,6 +944,10 @@ def readme_lane_summary(lane: str, instances: list[ModuleInstance]) -> str:
         parts.extend(
             f"Vitest route coverage for `apps/{instance.app_id}`"
             for instance in nextjs_backend_instances
+        )
+        parts.extend(
+            f"Vitest component coverage for `packages/{instance.app_id}`"
+            for instance in package_instances
         )
         parts.extend(
             f"`pytest` coverage for `apps/{instance.app_id}`"
@@ -882,6 +981,7 @@ def build_architecture(instances: list[ModuleInstance]) -> str:
     nextjs_backend_instances = [instance for instance in instances if instance.definition.name == "backend-nextjs"]
     fastapi_instances = [instance for instance in instances if instance.definition.name == "backend-fastapi"]
     axum_instances = [instance for instance in instances if instance.definition.name == "backend-axum"]
+    package_instances = package_nextjs_instances(instances)
 
     lines = [
         "# Architecture",
@@ -901,6 +1001,8 @@ def build_architecture(instances: list[ModuleInstance]) -> str:
         lines.insert(4, f"- `apps/{instance.app_id}`: a FastAPI backend service")
     for instance in axum_instances:
         lines.insert(4, f"- `apps/{instance.app_id}`: an Axum backend service")
+    for instance in package_instances:
+        lines.insert(4, f"- `packages/{instance.app_id}`: a publishable Next.js UI kit package")
 
     if has_frontend:
         lines.extend(
@@ -948,6 +1050,24 @@ def build_architecture(instances: list[ModuleInstance]) -> str:
             "The stack is mechanically enforced by `packages/ui/dependency-cruiser.cjs`.",
         ]
     )
+
+    if package_instances:
+        lines.extend(
+            [
+                "",
+                "## Publishable UI Kit Packages",
+                "",
+                "Each `package-nextjs` module emits a package under `packages/<id>` with:",
+                "",
+                "- `src/ui` for exported rendering primitives",
+                "- `src/runtime` for framework-safe helpers",
+                "- `src/providers` for explicit client providers",
+                "- `src/styles/globals.css` for Tailwind v4 and shadcn tokens",
+                "",
+                "These packages are designed to publish from their package directory after the package name is changed to an owned registry scope.",
+            ]
+        )
+        lines.extend(f"- applies to `packages/{instance.app_id}`" for instance in package_instances)
 
     if fastapi_instances:
         lines.extend(
@@ -1020,6 +1140,8 @@ def build_reliability(instances: list[ModuleInstance]) -> str:
     nextjs_backend_instances = [instance for instance in instances if instance.definition.name == "backend-nextjs"]
     fastapi_instances = [instance for instance in instances if instance.definition.name == "backend-fastapi"]
     axum_instances = [instance for instance in instances if instance.definition.name == "backend-axum"]
+    package_instances = package_nextjs_instances(instances)
+    has_dev_task = has_frontend or nextjs_backend_instances or fastapi_instances
 
     lines = [
         "# Reliability",
@@ -1031,7 +1153,11 @@ def build_reliability(instances: list[ModuleInstance]) -> str:
         "```bash",
         "mise install",
         "just install",
-        "pnpm dev",
+    ]
+    if has_dev_task:
+        lines.append("pnpm dev")
+    lines.extend(
+        [
         "just lint",
         "just typecheck",
         "just test",
@@ -1039,7 +1165,8 @@ def build_reliability(instances: list[ModuleInstance]) -> str:
         "just supply-chain",
         "just ci",
         "```",
-    ]
+        ]
+    )
 
     if fastapi_instances:
         lines.extend(
@@ -1076,6 +1203,31 @@ def build_reliability(instances: list[ModuleInstance]) -> str:
         )
         for instance in axum_instances:
             lines.extend([f"cd apps/{instance.app_id}", "cargo run"])
+        lines.extend(["```"])
+
+    if package_instances:
+        lines.extend(
+            [
+                "",
+                "Build package artifacts before publishing:",
+                "",
+                "```bash",
+            ]
+        )
+        lines.extend(f"pnpm --filter {package_filter(instance)} build" for instance in package_instances)
+        lines.extend(["```"])
+        lines.extend(
+            [
+                "",
+                "Build package Storybook docs before sharing component previews:",
+                "",
+                "```bash",
+            ]
+        )
+        lines.extend(
+            f"pnpm --filter {package_filter(instance)} storybook:build"
+            for instance in package_instances
+        )
         lines.extend(["```"])
 
     lines.extend(
@@ -1149,10 +1301,15 @@ def scaffold_title(instances: list[ModuleInstance]) -> str:
     nextjs_backend_count = sum(1 for instance in instances if instance.definition.name == "backend-nextjs")
     fastapi_count = sum(1 for instance in instances if instance.definition.name == "backend-fastapi")
     axum_count = sum(1 for instance in instances if instance.definition.name == "backend-axum")
+    package_count = len(package_nextjs_instances(instances))
 
     parts = []
     if has_frontend:
         parts.append("Next.js")
+    if package_count == 1:
+        parts.append("Next.js UI Kit Package")
+    elif package_count > 1:
+        parts.append(f"{package_count}x Next.js UI Kit Package")
     if nextjs_backend_count == 1:
         parts.append("Next.js API")
     elif nextjs_backend_count > 1:
@@ -1168,11 +1325,21 @@ def scaffold_title(instances: list[ModuleInstance]) -> str:
 
     if not parts:
         return "Composable Monorepo Scaffold"
+    if parts == ["Next.js UI Kit Package"]:
+        return "Next.js UI Kit Package Scaffold"
     return " + ".join(parts) + " Monorepo Scaffold"
 
 
 def runnable_instances(instances: list[ModuleInstance]) -> list[ModuleInstance]:
     return [instance for instance in instances if instance.is_runnable]
+
+
+def package_nextjs_instances(instances: list[ModuleInstance]) -> list[ModuleInstance]:
+    return [instance for instance in instances if instance.definition.name == "package-nextjs"]
+
+
+def package_filter(instance: ModuleInstance) -> str:
+    return f"@workspace/{instance.app_id}"
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:

@@ -4,9 +4,9 @@ install:
   mise install
 
 self-check:
-  npm run repo:self-check
+  pnpm run repo:self-check
 
 supply-chain:
-  npm run repo:supply-chain
+  pnpm run repo:supply-chain
 
 ci: self-check supply-chain
