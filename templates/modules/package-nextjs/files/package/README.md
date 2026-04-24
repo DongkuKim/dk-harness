@@ -1,0 +1,35 @@
+# __APP_TITLE__
+
+Publishable Next.js-focused UI kit package.
+
+## Commands
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+## Usage
+
+Import the package stylesheet once from your Next.js app root:
+
+```tsx
+import "@workspace/__APP_PACKAGE_NAME__/globals.css"
+```
+
+Use package exports in app or shared UI code:
+
+```tsx
+import { Button } from "@workspace/__APP_PACKAGE_NAME__"
+```
+
+## Publishing
+
+Change the package name in `package.json` to your registry scope before the first publish, then run:
+
+```bash
+pnpm prepublishOnly
+pnpm publish --access public
+```

@@ -1,6 +1,6 @@
 # Product Sense
 
-This repo is optimized for agents and developers who want a small, opinionated module catalog for Next.js, Python, and Rust projects.
+This repo is optimized for agents and developers who want a small, opinionated module catalog for Next.js apps, publishable UI kit packages, Python services, and Rust services.
 
 The default experience should communicate:
 

@@ -23,6 +23,9 @@ jobs:
           - name: next-monorepo
             needs_python: false
             needs_rust: false
+          - name: package-nextjs-ui-kit
+            needs_python: false
+            needs_rust: false
           - name: next-nextjs-api-monorepo
             needs_python: false
             needs_rust: false

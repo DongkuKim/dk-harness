@@ -1,0 +1,26 @@
+{
+  "name": "package-nextjs",
+  "kind": "package",
+  "runtime": "node",
+  "repeatable": true,
+  "default_app_id": "ui-kit",
+  "requires": [
+    "core-monorepo"
+  ],
+  "conflicts": [],
+  "emits": [
+    {
+      "source": "files/package",
+      "target": "packages/__APP_ID__"
+    }
+  ],
+  "check_metadata": {
+    "runnable": false,
+    "ux_capable": false,
+    "needs_python": false,
+    "needs_rust": false
+  },
+  "documentation": {
+    "app_summary": "Publishable Next.js UI kit package"
+  }
+}

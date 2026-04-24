@@ -34,7 +34,7 @@ run("osv-scanner", [
   "templates",
 ]);
 
-console.log("Running npm audit...");
-run("npm", ["audit", "--audit-level=high"]);
+console.log("Running pnpm audit...");
+run("pnpm", ["audit", "--audit-level=high"]);
 
 console.log("repo:supply-chain passed");

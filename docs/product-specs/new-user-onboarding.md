@@ -7,8 +7,8 @@ A new user should be able to discover the supported scaffold modules, compose th
 ## Primary User
 
 - an agent or developer who wants a supported harness without maintaining a full starter template per stack combination
-- someone choosing between a web-only monorepo, a backend-only repo, or a mixed-runtime monorepo
-- someone who wants the same composition flow to work from the local repo and from the published npm package
+- someone choosing between a web-only monorepo, a publishable UI kit package repo, a backend-only repo, or a mixed-runtime monorepo
+- someone who wants the same composition flow to work from the local repo and from the published package
 
 ## Current Product Surface
 
@@ -25,27 +25,29 @@ The source of truth for what users can scaffold is [`templates/modules/`](../../
 1. The user runs `dk-harness list` and sees the supported modules:
    - `core-monorepo`
    - `frontend-nextjs`
+   - `package-nextjs`
    - `backend-nextjs`
    - `backend-fastapi`
    - `backend-axum`
 2. The user chooses a composition based on the stack they need:
    - web-only: `core-monorepo` + `frontend-nextjs`
+   - UI kit package: `core-monorepo` + `package-nextjs:ui-kit`
    - web + Next.js API: add `backend-nextjs:next-api`
    - web + Python API: add `backend-fastapi:fast-api`
    - web + Rust service: add `backend-axum:realtime`
    - repeated services: add more repeatable runtime modules with unique ids
 3. The user scaffolds a repo with one command:
    - local repo: `./bin/dk-harness new my-app --module core-monorepo --module frontend-nextjs`
-   - npm package: `npm exec --package . -- dk-harness new my-app --module core-monorepo --module frontend-nextjs`
-   - published package: `npx dk-harness@latest new my-app --module core-monorepo --module frontend-nextjs`
+   - published package: `pnpm dlx --package=dk-harness@latest dk-harness new my-app --module core-monorepo --module frontend-nextjs`
 4. The CLI validates module requirements and conflicts, composes the scaffold into the destination, and optionally initializes git with `--init-git`.
-5. The generated repo contains the committed harness files, its own workflow and `just` command surface, and the requested `apps/*` layout.
+5. The generated repo contains the committed harness files, its own workflow and `just` command surface, and the requested `apps/*` or `packages/*` layout.
 
 ## Current Implementation Details
 
 - Module selection is non-interactive. Users must pass repeated `--module` flags explicitly.
 - `core-monorepo` must appear exactly once.
 - `frontend-nextjs` is non-repeatable and always emits `apps/web`.
+- `package-nextjs` is repeatable and emits publishable package workspaces under `packages/<id>`.
 - `backend-nextjs`, `backend-fastapi`, and `backend-axum` are repeatable and require unique runtime ids across `apps/*`.
 - Missing requirements and declared conflicts fail before the CLI writes any files.
 - The CLI refuses to write into a non-empty directory unless `--force` is provided.
@@ -57,10 +59,10 @@ The source of truth for what users can scaffold is [`templates/modules/`](../../
 
 The onboarding experience is backed by repo-level checks rather than by narrative alone:
 
-- `npm run repo:self-check` compiles the Python CLI, validates the module catalog, checks fixture freshness, runs `./bin/dk-harness list`, and then runs the release packaging verification
-- `npm run fixtures:check` composes every curated preset into a temporary directory and fails if `scaffolds/generated/` drifted from the module sources
-- `npm run release:check` packs the npm tarball, verifies required package contents, confirms committed fixtures are not shipped, runs the packaged CLI, and composes every curated preset
-- `npm run scaffold:eval -- --preset <name>` composes a fresh repo from the packed tarball and runs the generated repo's own `just lint`, `just typecheck`, and `just test` commands
+- `pnpm run repo:self-check` compiles the Python CLI, validates the module catalog, checks fixture freshness, runs `./bin/dk-harness list`, and then runs the release packaging verification
+- `pnpm run fixtures:check` composes every curated preset into a temporary directory and fails if `scaffolds/generated/` drifted from the module sources
+- `pnpm run release:check` packs the package tarball, verifies required package contents, confirms committed fixtures are not shipped, runs the packaged CLI, and composes every curated preset
+- `pnpm run scaffold:eval -- --preset <name>` composes a fresh repo from the packed tarball and runs the generated repo's own `just lint`, `just typecheck`, and `just test` commands
 
 ## Non-Goals In The Current Implementation
 

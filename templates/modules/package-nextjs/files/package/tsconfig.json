@@ -1,0 +1,13 @@
+{
+  "extends": "@workspace/typescript-config/react-library.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@workspace/__APP_PACKAGE_NAME__": ["./src/index.ts"],
+      "@workspace/__APP_PACKAGE_NAME__/*": ["./src/*"]
+    },
+    "types": ["vitest/globals"]
+  },
+  "include": ["src", "tests", "vitest.config.ts", "vitest.setup.ts"],
+  "exclude": ["node_modules", "dist"]
+}

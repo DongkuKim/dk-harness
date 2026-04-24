@@ -74,6 +74,22 @@ function assert(condition, message) {
   }
 }
 
+function packageNextjsIds(modules) {
+  return modules
+    .filter(
+      (moduleSpec) => moduleSpec === "package-nextjs" || moduleSpec.startsWith("package-nextjs:"),
+    )
+    .map((moduleSpec) => moduleSpec.split(":", 2)[1] ?? "ui-kit");
+}
+
+function tarballPathFromPackOutput(packOutput, packDir) {
+  const payload = JSON.parse(packOutput.stdout);
+  const filename = Array.isArray(payload) ? payload[0]?.filename : payload.filename;
+
+  assert(typeof filename === "string" && filename.length > 0, "Expected pack output to include a filename.");
+  return path.isAbsolute(filename) ? filename : path.join(packDir, filename);
+}
+
 const options = parseArgs(process.argv.slice(2));
 const targetRoot = options.targetRoot ? path.resolve(options.targetRoot) : os.tmpdir();
 mkdirSync(targetRoot, { recursive: true });
@@ -87,22 +103,19 @@ try {
   mkdirSync(packDir, { recursive: true });
   mkdirSync(scaffoldRoot, { recursive: true });
 
-  console.log("Packing npm tarball...");
-  const packOutput = run("npm", ["pack", "--json", "--pack-destination", packDir]);
-  const [packResult] = JSON.parse(packOutput.stdout);
-  const tarballPath = path.join(packDir, packResult.filename);
+  console.log("Packing package tarball with pnpm...");
+  const packOutput = run("pnpm", ["pack", "--json", "--pack-destination", packDir]);
+  const tarballPath = tarballPathFromPackOutput(packOutput, packDir);
 
   const presetPath = path.join(repoRoot, "scaffolds", "presets", `${options.preset}.json`);
   const preset = JSON.parse(readFileSync(presetPath, "utf8"));
 
   const scaffoldDir = path.join(scaffoldRoot, options.preset);
   console.log(`Scaffolding ${options.preset} into ${scaffoldDir}`);
-  run("npm", [
-    "exec",
-    "--yes",
+  run("pnpm", [
     "--package",
     tarballPath,
-    "--",
+    "dlx",
     "dk-harness",
     "new",
     scaffoldDir,
@@ -117,9 +130,12 @@ try {
   console.log(`Installing Node dependencies in ${scaffoldDir}`);
   run("pnpm", ["install"], { cwd: scaffoldDir });
 
-  const appEntries = readdirSync(path.join(scaffoldDir, "apps"), { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name);
+  const appsDir = path.join(scaffoldDir, "apps");
+  const appEntries = existsSync(appsDir)
+    ? readdirSync(appsDir, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+    : [];
   const pythonApps = appEntries.filter((appName) =>
     existsSync(path.join(scaffoldDir, "apps", appName, "pyproject.toml")),
   );
@@ -148,6 +164,9 @@ try {
   run("just", ["lint"], { cwd: scaffoldDir });
   run("just", ["typecheck"], { cwd: scaffoldDir });
   run("just", ["test"], { cwd: scaffoldDir });
+  for (const packageId of packageNextjsIds(preset.modules)) {
+    run("pnpm", ["--filter", `@workspace/${packageId}`, "build"], { cwd: scaffoldDir });
+  }
 
   console.log(`scaffold:evaluate passed for ${options.preset}`);
 } finally {

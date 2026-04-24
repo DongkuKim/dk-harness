@@ -43,6 +43,14 @@ function assert(condition, message) {
   }
 }
 
+function tarballPathFromPackOutput(packOutput, packDir) {
+  const payload = JSON.parse(packOutput.stdout);
+  const filename = Array.isArray(payload) ? payload[0]?.filename : payload.filename;
+
+  assert(typeof filename === "string" && filename.length > 0, "Expected pack output to include a filename.");
+  return path.isAbsolute(filename) ? filename : path.join(packDir, filename);
+}
+
 const requiredModuleTarEntries = readdirSync(path.join(repoRoot, "templates", "modules"), {
   withFileTypes: true,
 })
@@ -69,10 +77,9 @@ try {
   mkdirSync(packDir, { recursive: true });
   mkdirSync(scaffoldDir, { recursive: true });
 
-  console.log("Packing npm tarball...");
-  const packOutput = run("npm", ["pack", "--json", "--pack-destination", packDir]);
-  const [packResult] = JSON.parse(packOutput.stdout);
-  const tarballPath = path.join(packDir, packResult.filename);
+  console.log("Packing package tarball with pnpm...");
+  const packOutput = run("pnpm", ["pack", "--json", "--pack-destination", packDir]);
+  const tarballPath = tarballPathFromPackOutput(packOutput, packDir);
 
   console.log(`Inspecting tarball contents: ${tarballPath}`);
   const tarEntries = new Set(
@@ -84,12 +91,10 @@ try {
   }
 
   console.log("Running installed package smoke test: list");
-  const listOutput = run("npm", [
-    "exec",
-    "--yes",
+  const listOutput = run("pnpm", [
     "--package",
     tarballPath,
-    "--",
+    "dlx",
     "dk-harness",
     "list",
   ]);
@@ -100,7 +105,7 @@ try {
 
   assert(
     !Array.from(tarEntries).some((entry) => entry.startsWith("package/scaffolds/generated/")),
-    "Committed generated scaffold fixtures should not be included in the npm tarball.",
+    "Committed generated scaffold fixtures should not be included in the package tarball.",
   );
 
   const presetsRoot = path.join(repoRoot, "scaffolds", "presets");
@@ -114,12 +119,10 @@ try {
     const targetDir = path.join(scaffoldDir, preset.name);
 
     console.log(`Running installed package smoke test: scaffold ${preset.name}`);
-    run("npm", [
-      "exec",
-      "--yes",
+    run("pnpm", [
       "--package",
       tarballPath,
-      "--",
+      "dlx",
       "dk-harness",
       "new",
       targetDir,
